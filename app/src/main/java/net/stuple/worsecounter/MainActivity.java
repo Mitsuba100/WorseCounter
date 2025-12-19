@@ -1,56 +1,60 @@
 package net.stuple.worsecounter;
 
-import android.media.MediaPlayer;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.widget.ProgressBar;
 import android.widget.TextView;
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
-    private int myPickedNumber = (int)(Math.random() * 60);
-    //private int myPickedNumber = 4;
 
+    private TextView textView;
+
+    // This "Radio" listens for the Service's broadcast
+    private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int timeLeft = intent.getIntExtra("remaining", 0);
+            if (textView != null) {
+                textView.setText("Counter: " + timeLeft);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        TextView textView = findViewById(R.id.number_view); //meins
-        textView.setText(String.valueOf("Counter: "+myPickedNumber)); //meins
-        MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.fahhh);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        textView = findViewById(R.id.number_view);
 
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-
-                if (myPickedNumber <= 0){
-                    handler.removeCallbacks(this::run);
-                    mediaPlayer.setVolume(0.5f, 0.5f);
-                    mediaPlayer.start();
-
-                }
-                else{
-                    myPickedNumber--;
-                    System.out.println(myPickedNumber);
-                    textView.setText(String.valueOf("Counter: "+myPickedNumber));
-                    handler.postDelayed(this::run,1000);
-                }
-            }
+        // Start the background service
+        Intent intent = new Intent(this, CounterService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
         }
-        );
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Register the listener when the app is in focus
+        IntentFilter filter = new IntentFilter(CounterService.ACTION_TICK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(timeReceiver, filter, Context.RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(timeReceiver, filter);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Unregister to save battery when the app is hidden
+        unregisterReceiver(timeReceiver);
     }
 }
