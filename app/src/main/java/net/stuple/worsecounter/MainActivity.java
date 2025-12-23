@@ -1,5 +1,6 @@
 package net.stuple.worsecounter;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,7 +18,7 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             int timeLeft = intent.getIntExtra("remaining", 0);
             if (textView != null) {
-                textView.setText("Counter: " + timeLeft);
+                textView.setText("Countdown: " + timeLeft);
             }
         }
     };
@@ -35,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onResume() {
         super.onResume();
