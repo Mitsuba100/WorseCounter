@@ -15,11 +15,10 @@ import androidx.core.app.NotificationCompat;
 public class CounterService extends Service {
     private int myPickedNumber;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private MediaPlayer mediaPlayer; // We will create this only when needed
+    private MediaPlayer mediaPlayer;
     private static final String CHANNEL_ID = "CounterChannel";
     public static final String ACTION_TICK = "net.stuple.worsecounter.TICK";
 
-    // Your array of sounds
     private final int[] soundList = {
             R.raw.alarm,
             R.raw.fahhh,
@@ -28,8 +27,6 @@ public class CounterService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        // Don't initialize mediaPlayer here anymore,
-        // we do it inside the loop now!
     }
 
     @Override
@@ -54,30 +51,21 @@ public class CounterService extends Service {
     private final Runnable counterRunnable = new Runnable() {
         @Override
         public void run() {
-            // Send the current time to the Activity
             Intent tickIntent = new Intent(ACTION_TICK);
             tickIntent.putExtra("remaining", myPickedNumber);
             sendBroadcast(tickIntent);
 
             if (myPickedNumber <= 0) {
-                // 1. Pick a random sound from the array
                 int randomIndex = (int) (Math.random() * soundList.length);
                 int selectedSound = soundList[randomIndex];
-
-                // 2. Clear out the old sound if it exists
                 if (mediaPlayer != null) {
                     mediaPlayer.release();
                 }
-
-                // 3. Create the player with the NEW random sound
                 mediaPlayer = MediaPlayer.create(CounterService.this, selectedSound);
-
                 if (mediaPlayer != null) {
                     mediaPlayer.setVolume(0.5f, 0.5f);
                     mediaPlayer.start();
                 }
-
-                // 4. Wait 3 seconds, then reset automatically
                 handler.postDelayed(() -> resetAndStart(), 3000);
             } else {
                 myPickedNumber--;
